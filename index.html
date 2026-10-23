@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Our Scrapbook</title>
+<style>
+:root{
+  --bg:#f3e9d8; --paper:#fffdf7; --ink:#3b2f2f; --muted:#7a6a5f; --accent:#d9625b; --line:#e2d3bb;
+  --shadow:0 6px 14px rgba(60,40,20,.25);
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){--bg:#2a2420;--paper:#3a322c;--ink:#f1e7da;--muted:#b8a897;--accent:#ef7d75;--line:#52473e;--shadow:0 6px 14px rgba(0,0,0,.5)}
+}
+:root[data-theme="dark"]{--bg:#2a2420;--paper:#3a322c;--ink:#f1e7da;--muted:#b8a897;--accent:#ef7d75;--line:#52473e;--shadow:0 6px 14px rgba(0,0,0,.5)}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Patrick Hand","Segoe Print","Comic Sans MS",cursive,sans-serif;
+  background-image:radial-gradient(var(--line) 1px,transparent 1px);background-size:22px 22px;min-height:100vh}
+header{text-align:center;padding:28px 16px 8px}
+h1{margin:0;font-size:clamp(2rem,6vw,3.2rem);letter-spacing:1px}
+header p{margin:6px 0 0;color:var(--muted);font-size:1.1rem}
+.bar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:12px 16px}
+button,.btn{font:inherit;cursor:pointer;border:2px solid var(--ink);background:var(--paper);color:var(--ink);padding:8px 16px;border-radius:999px;box-shadow:2px 3px 0 var(--ink)}
+button:active{transform:translate(2px,3px);box-shadow:none}
+button.primary{background:var(--accent);color:#fff;border-color:var(--ink)}
+.board{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:34px 24px;padding:24px 20px 80px;max-width:1100px;margin:0 auto}
+.card{background:var(--paper);padding:12px 12px 16px;box-shadow:var(--shadow);position:relative;transform:rotate(var(--r,0deg));transition:transform .2s}
+.card:hover{transform:rotate(0) scale(1.03);z-index:2}
+.card::before{content:"";position:absolute;top:-12px;left:50%;width:84px;height:24px;transform:translateX(-50%) rotate(-3deg);background:var(--tape,#f2c94c);opacity:.8}
+.card img{width:100%;display:block;aspect-ratio:1/1;object-fit:cover;background:var(--line)}
+.card .ph{aspect-ratio:1/1;display:grid;place-items:center;font-size:3.5rem;background:var(--line)}
+.card h3{margin:12px 0 2px;font-size:1.4rem}
+.card .date{color:var(--muted);font-size:.95rem}
+.card p{margin:8px 0 0;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere}
+.card .x{position:absolute;top:6px;right:6px;width:28px;height:28px;padding:0;border-radius:50%;line-height:1;font-size:16px;box-shadow:none;opacity:0;background:var(--paper)}
+.card:hover .x,.card:focus-within .x{opacity:1}
+@media (hover:none){.card .x{opacity:.8}}
+.empty{grid-column:1/-1;text-align:center;color:var(--muted);font-size:1.3rem;padding:50px 10px}
+dialog{border:3px solid var(--ink);border-radius:14px;background:var(--paper);color:var(--ink);padding:20px;width:min(440px,92vw);font:inherit}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+label{display:block;margin:10px 0 4px;color:var(--muted)}
+input[type=text],input[type=date],textarea{width:100%;font:inherit;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+textarea{min-height:90px;resize:vertical}
+.row{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.prev{max-width:100%;max-height:160px;margin-top:8px;display:none;border-radius:6px}
+.tapes{display:flex;gap:8px}
+.tapes input{display:none}
+.tapes span{display:block;width:32px;height:20px;border:2px solid transparent;cursor:pointer}
+.tapes input:checked+span{border-color:var(--ink)}
+#msg{text-align:center;color:var(--accent);min-height:1.2em}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title" contenteditable="true" spellcheck="false">Our Scrapbook</h1>
+  <p>Every memory we make goes here ✨</p>
+</header>
+<div class="bar">
+  <button class="primary" id="add">+ Add a memory</button>
+  <button id="export">Save backup</button>
+  <label class="btn" style="margin:0">Load backup<input type="file" id="import" accept=".json" hidden></label>
+</div>
+<div id="msg"></div>
+<main class="board" id="board"></main>
+
+<dialog id="dlg">
+  <form method="dialog" id="f">
+    <h2 style="margin:0">New memory</h2>
+    <label for="t">What did we do?</label>
+    <input type="text" id="t" maxlength="60" required placeholder="Movie night...">
+    <label for="d">When?</label>
+    <input type="date" id="d">
+    <label for="n">Story / notes</label>
+    <textarea id="n" placeholder="What made it special?"></textarea>
+    <label for="p">Photo (optional)</label>
+    <input type="file" id="p" accept="image/*">
+    <img class="prev" id="prev" alt="">
+    <label>Tape color</label>
+    <div class="tapes" id="tapes"></div>
+    <div class="row">
+      <button type="button" id="cancel">Cancel</button>
+      <button class="primary" value="ok">Stick it in!</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(function(){
+  var KEY="scrapbook:entries", TKEY="scrapbook:title";
+  var tapes=["#f2c94c","#eb9ab0","#8fd0c8","#a9c6f2","#b9e0a0"];
+  var entries=[], photo="";
+  var $=function(id){return document.getElementById(id)};
+
+  var NTFY_TOPIC="Scrapbook";
+  function ping(text){
+    if(!NTFY_TOPIC)return;
+    try{fetch("https://ntfy.sh/"+encodeURIComponent(NTFY_TOPIC),{method:"POST",body:text}).catch(function(){})}catch(e){}
+  }
+
+  var EDIT_CODE="EthanWynters";
+  function unlock(){
+    if(!EDIT_CODE)return true;
+    try{if(sessionStorage.getItem("scrapbook:unlocked")==="1")return true}catch(e){}
+    var c=prompt("Enter the code to make changes:");
+    if(c===null)return false;
+    if(c.trim()===EDIT_CODE){
+      try{sessionStorage.setItem("scrapbook:unlocked","1")}catch(e){}
+      return true;
+    }
+    say("Wrong code.");
+    return false;
+  }
+
+  function load(){
+    try{entries=JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){entries=[]}
+    try{var t=localStorage.getItem(TKEY); if(t)$("title").textContent=t}catch(e){}
+  }
+  function save(){
+    try{localStorage.setItem(KEY,JSON.stringify(entries));return true}
+    catch(e){say("Storage is full. Save a backup and remove some photos.");return false}
+  }
+  function say(m){$("msg").textContent=m;setTimeout(function(){$("msg").textContent=""},4000)}
+
+  function render(){
+    var b=$("board"); b.innerHTML="";
+    if(!entries.length){b.innerHTML='<div class="empty">Nothing here yet. Tap "+ Add a memory" to start! 📖</div>';return}
+    entries.slice().sort(function(a,c){return (c.date||"").localeCompare(a.date||"")||c.id-a.id}).forEach(function(e){
+      var c=document.createElement("article"); c.className="card";
+      c.style.setProperty("--r",(((e.id%70)/10)-3.5).toFixed(1)+"deg");
+      c.style.setProperty("--tape",e.tape||tapes[0]);
+      var media;
+      if(e.img){media=document.createElement("img");media.src=e.img;media.alt=e.title}
+      else{media=document.createElement("div");media.className="ph";media.textContent="💛"}
+      var h=document.createElement("h3");h.textContent=e.title;
+      var d=document.createElement("div");d.className="date";
+      d.textContent=e.date?new Date(e.date+"T00:00").toLocaleDateString(undefined,{year:"numeric",month:"long",day:"numeric"}):"";
+      var p=document.createElement("p");p.textContent=e.note||"";
+      var x=document.createElement("button");x.className="x";x.textContent="×";x.title="Delete";x.setAttribute("aria-label","Delete memory");
+      x.onclick=function(){if(!unlock())return;if(confirm("Remove this memory?")){entries=entries.filter(function(z){return z.id!==e.id});save();render()}};
+      c.append(media,h,d,p,x); b.appendChild(c);
+    });
+  }
+
+  // tape pickers
+  tapes.forEach(function(col,i){
+    var l=document.createElement("label");l.style.margin=0;
+    l.innerHTML='<input type="radio" name="tape" value="'+col+'"'+(i===0?" checked":"")+'><span style="background:'+col+'"></span>';
+    $("tapes").appendChild(l);
+  });
+
+  // photo -> downscaled jpeg so storage lasts
+  $("p").onchange=function(){
+    var f=this.files[0]; photo="";
+    if(!f){$("prev").style.display="none";return}
+    var r=new FileReader();
+    r.onload=function(){
+      var im=new Image();
+      im.onload=function(){
+        var s=Math.min(1,700/Math.max(im.width,im.height));
+        var cv=document.createElement("canvas");cv.width=im.width*s;cv.height=im.height*s;
+        cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);
+        photo=cv.toDataURL("image/jpeg",.75);
+        $("prev").src=photo;$("prev").style.display="block";
+      };
+      im.src=r.result;
+    };
+    r.readAsDataURL(f);
+  };
+
+  $("add").onclick=function(){
+    if(!unlock())return;
+    $("f").reset();photo="";$("prev").style.display="none";
+    $("d").value=new Date().toISOString().slice(0,10);
+    $("dlg").showModal();
+  };
+  $("cancel").onclick=function(){$("dlg").close()};
+  $("f").onsubmit=function(){
+    var t=$("t").value.trim(); if(!t)return;
+    var tp=document.querySelector('input[name=tape]:checked');
+    entries.push({id:Date.now(),title:t,date:$("d").value,note:$("n").value.trim(),img:photo,tape:tp?tp.value:tapes[0]});
+    save();render();
+    ping("New memory added to the scrapbook");
+  };
+
+  $("title").onblur=function(){try{localStorage.setItem(TKEY,this.textContent.trim()||"Our Scrapbook")}catch(e){}};
+  $("title").onkeydown=function(e){if(e.key==="Enter"){e.preventDefault();this.blur()}};
+
+  // backup / restore (the safe way to keep memories or move devices)
+  $("export").onclick=function(){
+    var blob=new Blob([JSON.stringify({title:$("title").textContent,entries:entries})],{type:"application/json"});
+    var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="scrapbook-backup.json";
+    document.body.appendChild(a);a.click();a.remove();
+    say("If nothing downloaded, your viewer may block downloads. Try the file version.");
+  };
+  $("import").onchange=function(){
+    var f=this.files[0]; if(!f)return;
+    if(!unlock()){this.value="";return}
+    var r=new FileReader();
+    r.onload=function(){
+      try{
+        var o=JSON.parse(r.result);
+        if(o.entries&&o.entries.length){
+          var have={};entries.forEach(function(e){have[e.id]=1});
+          o.entries.forEach(function(e){if(!have[e.id])entries.push(e)});
+          if(o.title)$("title").textContent=o.title;
+          save();render();say("Backup loaded!");
+        }
+      }catch(e){say("That file didn't look like a scrapbook backup.")}
+    };
+    r.readAsText(f);
+  };
+
+  load();render();
+
+  try{
+    if(!sessionStorage.getItem("scrapbook:pinged")){
+      sessionStorage.setItem("scrapbook:pinged","1");
+      ping("Someone opened the scrapbook");
+    }
+  }catch(e){ping("Someone opened the scrapbook")}
+})();
+</script>
+</body>
+</html>
